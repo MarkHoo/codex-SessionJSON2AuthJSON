@@ -1,0 +1,983 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ForesAi - Session 转 Auth JSON</title>
+    <style>
+      :root {
+        --bg: #fafaf9;
+        --surface: #ffffff;
+        --surface-alt: #f5f4f0;
+        --border: #e7e5e0;
+        --border-light: #f0eee9;
+        --ink: #1b1b18;
+        --ink-secondary: #5e5c54;
+        --ink-muted: #8b8982;
+        --accent: #4f46e5;
+        --accent-hover: #4338ca;
+        --accent-soft: #eef2ff;
+        --accent-border: #c7d2fe;
+        --green: #0d9488;
+        --green-soft: #f0fdf9;
+        --green-border: #99f6e0;
+        --red: #dc2626;
+        --red-soft: #fef2f2;
+        --red-border: #fecaca;
+        --amber: #d97706;
+        --amber-soft: #fffbeb;
+        --amber-border: #fde68a;
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
+        --shadow-lg: 0 2px 8px rgba(0, 0, 0, 0.06),
+          0 12px 40px rgba(0, 0, 0, 0.06);
+        --radius-sm: 6px;
+        --radius: 10px;
+        --radius-lg: 14px;
+        --font-mono: "Cascadia Code", "SF Mono", "Fira Code", "JetBrains Mono",
+          Consolas, "Liberation Mono", monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system,
+          BlinkMacSystemFont, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        line-height: 1.5;
+      }
+
+      button,
+      textarea,
+      input {
+        font: inherit;
+      }
+
+      /* ── Shell ───────────────────── */
+      .shell {
+        width: min(1280px, 100%);
+        margin: 0 auto;
+        padding: 20px 24px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        min-height: 100vh;
+      }
+
+      /* ── Topbar ──────────────────── */
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .brand-mark {
+        width: 42px;
+        height: 42px;
+        border-radius: var(--radius);
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        display: grid;
+        place-items: center;
+        color: #fff;
+        flex-shrink: 0;
+        box-shadow: 0 6px 20px rgba(79, 70, 229, 0.22);
+      }
+
+      .brand-mark svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .brand-text h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        line-height: 1.15;
+      }
+
+      .brand-text span {
+        font-size: 0.8rem;
+        color: var(--ink-muted);
+        letter-spacing: 0.02em;
+      }
+
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      /* ── Buttons ─────────────────── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 2.4rem;
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--ink);
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+        text-decoration: none;
+      }
+
+      .btn:hover {
+        background: var(--surface-alt);
+        border-color: #d4d1c8;
+      }
+
+      .btn:active {
+        transform: scale(0.98);
+      }
+
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+
+      .btn-primary:hover {
+        background: var(--accent-hover);
+        border-color: var(--accent-hover);
+      }
+
+      .btn-icon {
+        width: 2.4rem;
+        padding: 0;
+        justify-content: center;
+        border-radius: var(--radius-sm);
+      }
+
+      .btn-icon svg {
+        width: 17px;
+        height: 17px;
+        flex-shrink: 0;
+      }
+
+      .btn-sm {
+        min-height: 2rem;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.8rem;
+      }
+
+      /* ── Toggle switch ───────────── */
+      .toggle-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0.4rem 0.8rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        font-size: 0.85rem;
+        color: var(--ink-secondary);
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+      }
+
+      .toggle-wrap input {
+        width: 1rem;
+        height: 1rem;
+        accent-color: var(--accent);
+        cursor: pointer;
+      }
+
+      /* ── Status bar ──────────────── */
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 10px 14px;
+        border-radius: var(--radius);
+        background: var(--surface-alt);
+        border: 1px solid var(--border-light);
+        font-size: 0.85rem;
+        color: var(--ink-muted);
+        min-height: 42px;
+        transition: all 0.2s ease;
+      }
+
+      .status svg {
+        width: 17px;
+        height: 17px;
+        flex-shrink: 0;
+      }
+
+      .status[data-tone="ok"] {
+        background: var(--green-soft);
+        border-color: var(--green-border);
+        color: #0f766e;
+      }
+
+      .status[data-tone="error"] {
+        background: var(--red-soft);
+        border-color: var(--red-border);
+        color: #b91c1c;
+      }
+
+      /* ── Workbench ───────────────── */
+      .workbench {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 18px;
+        min-height: 0;
+      }
+
+      /* ── Pane ────────────────────── */
+      .pane {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+        min-height: 460px;
+        transition: box-shadow 0.2s ease;
+      }
+
+      .pane:focus-within {
+        box-shadow: var(--shadow-lg), 0 0 0 3px rgba(79, 70, 229, 0.08);
+        border-color: var(--accent-border);
+      }
+
+      .pane-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border-light);
+        background: #fafaf8;
+        flex-shrink: 0;
+      }
+
+      .pane-head h2 {
+        margin: 0;
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+      }
+
+      .pane-actions {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+      }
+
+      .pane-actions .btn {
+        min-height: 2rem;
+        width: 2rem;
+        padding: 0;
+        border: 1px solid transparent;
+        background: transparent;
+        border-radius: var(--radius-sm);
+      }
+
+      .pane-actions .btn:hover {
+        background: #e8e6df;
+        border-color: #d4d1c8;
+      }
+
+      textarea {
+        flex: 1;
+        width: 100%;
+        min-height: 280px;
+        resize: none;
+        border: none;
+        outline: none;
+        padding: 16px;
+        color: #1a1917;
+        background: #fdfdfc;
+        font-family: var(--font-mono);
+        font-size: 0.875rem;
+        line-height: 1.6;
+        tab-size: 2;
+      }
+
+      textarea::placeholder {
+        color: #bfbbb0;
+      }
+
+      textarea[readonly] {
+        background: #fafaf8;
+        color: #3d3b36;
+        cursor: default;
+      }
+
+      .pane-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 14px;
+        border-top: 1px solid var(--border-light);
+        background: #fafaf8;
+        font-size: 0.75rem;
+        color: var(--ink-muted);
+        flex-shrink: 0;
+      }
+
+      /* ── Arrow between panes ─────── */
+      .workbench-arrow {
+        display: none;
+      }
+
+      /* ── Info cards ──────────────── */
+      .info-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 18px;
+      }
+
+      .info-card {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        background: var(--surface);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+      }
+
+      .info-card-header {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 13px 16px;
+        border-bottom: 1px solid var(--border-light);
+        background: #fafaf8;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      .info-card-header svg {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        color: var(--accent);
+      }
+
+      .info-card-body {
+        padding: 16px;
+      }
+
+      .info-card-body ol {
+        margin: 0;
+        padding-left: 1.3rem;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        font-size: 0.875rem;
+        line-height: 1.55;
+        color: var(--ink-secondary);
+      }
+
+      .info-card-body ol li {
+        padding-left: 3px;
+      }
+
+      .info-card-body code {
+        background: #f3f1eb;
+        padding: 2px 7px;
+        border-radius: 4px;
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        color: #4f46e5;
+        word-break: break-all;
+      }
+
+      /* ── Terminal block ──────────── */
+      .terminal-block {
+        background: #1b1b18;
+        color: #e2e0d8;
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        line-height: 1.7;
+        overflow-x: auto;
+        white-space: pre;
+        margin: 0;
+      }
+
+      .terminal-block .path {
+        color: #a5f0c5;
+      }
+      .terminal-block .comment {
+        color: #8b8982;
+      }
+      .terminal-block .cmd {
+        color: #fbbf77;
+      }
+
+      .security-note {
+        margin-top: 12px;
+        padding: 12px 14px;
+        background: var(--amber-soft);
+        border: 1px solid var(--amber-border);
+        border-radius: var(--radius-sm);
+        font-size: 0.82rem;
+        color: #92400e;
+        line-height: 1.5;
+      }
+
+      .security-note strong {
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .security-note code {
+        background: rgba(0, 0, 0, 0.06);
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+      }
+
+      /* ── Footer ──────────────────── */
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding-top: 4px;
+        font-size: 0.8rem;
+        color: var(--ink-muted);
+        flex-wrap: wrap;
+      }
+
+      .footer a {
+        color: inherit;
+        text-decoration: none;
+        transition: color 0.15s;
+      }
+
+      .footer a:hover {
+        color: var(--accent);
+        text-decoration: underline;
+      }
+
+      /* ── Hidden file input ───────── */
+      .file-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        clip-path: inset(50%);
+      }
+
+      /* ── Responsive ──────────────── */
+      @media (max-width: 860px) {
+        .shell {
+          padding: 14px 14px 24px;
+          gap: 14px;
+        }
+
+        .topbar {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 12px;
+        }
+
+        .topbar-actions {
+          width: 100%;
+          justify-content: flex-start;
+        }
+
+        .workbench {
+          grid-template-columns: 1fr;
+          gap: 14px;
+        }
+
+        .pane {
+          min-height: 340px;
+        }
+
+        textarea {
+          min-height: 200px;
+        }
+
+        .info-grid {
+          grid-template-columns: 1fr;
+          gap: 14px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .shell {
+          padding: 10px 8px 20px;
+          gap: 10px;
+        }
+
+        .pane-head {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+        }
+
+        .pane-actions {
+          width: 100%;
+        }
+
+        .btn {
+          font-size: 0.8rem;
+          padding: 0.4rem 0.7rem;
+        }
+
+        .btn-icon {
+          width: 2rem;
+          padding: 0;
+        }
+
+        textarea {
+          font-size: 0.78rem;
+          padding: 12px;
+        }
+
+        .info-card-body ol {
+          font-size: 0.8rem;
+        }
+
+        .terminal-block {
+          font-size: 0.7rem;
+          padding: 10px 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <!-- ═══ 顶部 ═══ -->
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+          </div>
+          <div class="brand-text">
+            <h1>ForesAi</h1>
+            <span>Session JSON → Auth JSON 转换工具</span>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <button class="btn btn-primary" id="convertButton" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <polyline points="23 20 23 14 17 14"></polyline>
+              <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"></path>
+            </svg>
+            转换
+          </button>
+          <label class="toggle-wrap" title="输出压缩 JSON（单行）">
+            <input id="compactToggle" type="checkbox" />
+            压缩输出
+          </label>
+        </div>
+      </header>
+
+      <!-- ═══ 状态栏 ═══ -->
+      <div class="status" id="status" aria-live="polite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <span id="statusText">粘贴 Session JSON 到左侧输入框，将自动转换。</span>
+      </div>
+
+      <!-- ═══ 转换工作区 ═══ -->
+      <section class="workbench" aria-label="转换区域">
+        <!-- 源 JSON -->
+        <article class="pane">
+          <div class="pane-head">
+            <h2>📋 源 JSON</h2>
+            <div class="pane-actions">
+              <input class="file-input" id="fileInput" type="file" accept="application/json,.json" />
+              <button class="btn btn-icon" id="openFileButton" type="button" title="打开 JSON 文件" aria-label="打开 JSON 文件">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
+                  <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+                  <path d="M12 18v-6"></path>
+                  <path d="m9 15 3 3 3-3"></path>
+                </svg>
+              </button>
+              <button class="btn btn-icon" id="pasteButton" type="button" title="从剪贴板粘贴" aria-label="从剪贴板粘贴">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="8" height="4" x="8" y="2" rx="1"></rect>
+                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                </svg>
+              </button>
+              <button class="btn btn-icon" id="clearButton" type="button" title="清空全部" aria-label="清空全部">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18"></path>
+                  <path d="M8 6V4h8v2"></path>
+                  <path d="m19 6-1 14H6L5 6"></path>
+                  <path d="M10 11v6"></path>
+                  <path d="M14 11v6"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <textarea
+            id="sourceInput"
+            spellcheck="false"
+            autocomplete="off"
+            autocapitalize="off"
+            placeholder='从 https://chatgpt.com/api/auth/session 复制 JSON 粘贴到这里'
+          ></textarea>
+          <div class="pane-foot">
+            <span id="sourceStats">0 字符</span>
+            <span>粘贴后自动转换 · Ctrl+Enter 手动转换</span>
+          </div>
+        </article>
+
+        <!-- 目标 JSON -->
+        <article class="pane">
+          <div class="pane-head">
+            <h2>✅ 目标 JSON（auth.json）</h2>
+            <div class="pane-actions">
+              <button class="btn btn-icon" id="copyButton" type="button" title="复制结果" aria-label="复制结果" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="14" height="14" x="8" y="8" rx="2"></rect>
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                </svg>
+              </button>
+              <button class="btn btn-icon" id="downloadButton" type="button" title="下载 auth.json" aria-label="下载 auth.json" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <path d="M7 10l5 5 5-5"></path>
+                  <path d="M12 15V3"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <textarea
+            id="targetOutput"
+            spellcheck="false"
+            readonly
+            placeholder="转换结果将自动显示在这里"
+          ></textarea>
+          <div class="pane-foot">
+            <span id="targetStats">0 字符</span>
+            <span id="refreshStamp">—</span>
+          </div>
+        </article>
+      </section>
+
+      <!-- ═══ 信息卡片区 ═══ -->
+      <section class="info-grid" aria-label="帮助信息">
+        <!-- 使用说明 -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            使用说明
+          </div>
+          <div class="info-card-body">
+            <ol>
+              <li>在浏览器中登录 <strong>ChatGPT 网页版</strong></li>
+              <li>访问 <code>https://chatgpt.com/api/auth/session</code> 获取 Session JSON</li>
+              <li>将 JSON <strong>粘贴</strong>到左侧「源 JSON」输入框（自动转换）</li>
+              <li>检查右侧生成的「目标 JSON」</li>
+              <li>点击 <strong>「复制」</strong>或 <strong>「下载」</strong>保存为 <code>auth.json</code></li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- 安装说明 -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"></path>
+              <path d="M12 2v12"></path>
+              <path d="m8 10 4 4 4-4"></path>
+            </svg>
+            安装说明 · auth.json 放置位置
+          </div>
+          <div class="info-card-body">
+            <p style="margin:0 0 10px;font-size:0.85rem;color:var(--ink-secondary);">
+              下载后将 <code>auth.json</code> 放置到以下路径：
+            </p>
+            <div class="terminal-block">
+<span class="comment"># Linux / macOS：</span>
+<span class="path">~/.codex/auth.json</span>
+
+<span class="comment"># Windows：</span>
+<span class="path">%USERPROFILE%\.codex\auth.json</span>
+            </div>
+            <p style="margin:10px 0 0;font-size:0.82rem;color:var(--ink-muted);">
+              如果 <code>.codex</code> 目录不存在，请手动创建。放置完成后，运行 <code>codex</code> 命令即可自动读取认证信息。
+            </p>
+            <div class="security-note">
+              <strong>🔐 安全提示</strong>
+              <code>auth.json</code> 包含你的 OpenAI 会话凭证，请<strong>勿分享</strong>给他人，也不要上传到公开的代码仓库。建议将 <code>.codex/</code> 添加到 <code>.gitignore</code>。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ 页脚 ═══ -->
+      <footer class="footer">
+        <span>© 2025 ForesAi</span>
+        <a href="https://foresai.com" target="_blank" rel="noopener">foresai.com</a>
+      </footer>
+    </main>
+
+    <script>
+      const sourceInput = document.querySelector("#sourceInput");
+      const targetOutput = document.querySelector("#targetOutput");
+      const convertButton = document.querySelector("#convertButton");
+      const compactToggle = document.querySelector("#compactToggle");
+      const statusBox = document.querySelector("#status");
+      const statusText = document.querySelector("#statusText");
+      const sourceStats = document.querySelector("#sourceStats");
+      const targetStats = document.querySelector("#targetStats");
+      const refreshStamp = document.querySelector("#refreshStamp");
+      const copyButton = document.querySelector("#copyButton");
+      const downloadButton = document.querySelector("#downloadButton");
+      const clearButton = document.querySelector("#clearButton");
+      const pasteButton = document.querySelector("#pasteButton");
+      const openFileButton = document.querySelector("#openFileButton");
+      const fileInput = document.querySelector("#fileInput");
+
+      function utcNowWithMicroseconds() {
+        const date = new Date();
+        const iso = date.toISOString();
+        return iso.replace("Z", "000Z");
+      }
+
+      function convertSessionToAuth(source, compact) {
+        let parsed;
+        try {
+          parsed = JSON.parse(source);
+        } catch (error) {
+          throw new Error("源 JSON 解析失败：" + error.message);
+        }
+
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+          throw new Error("源 JSON 必须是对象。");
+        }
+        if (
+          typeof parsed.accessToken !== "string" ||
+          parsed.accessToken.length === 0
+        ) {
+          throw new Error("缺少字段：accessToken");
+        }
+        if (
+          !parsed.account ||
+          typeof parsed.account.id !== "string" ||
+          parsed.account.id.length === 0
+        ) {
+          throw new Error("缺少字段：account.id");
+        }
+
+        const lastRefresh = utcNowWithMicroseconds();
+        const output = {
+          last_refresh: lastRefresh,
+          tokens: {
+            access_token: parsed.accessToken,
+            account_id: parsed.account.id,
+            id_token: parsed.accessToken,
+            refresh_token: parsed.accessToken,
+          },
+        };
+
+        return {
+          json: JSON.stringify(output, null, compact ? 0 : 2) + "\n",
+          lastRefresh,
+        };
+      }
+
+      function setStatus(message, tone) {
+        statusText.textContent = message;
+        if (tone) {
+          statusBox.dataset.tone = tone;
+        } else {
+          delete statusBox.dataset.tone;
+        }
+      }
+
+      function updateStats() {
+        sourceStats.textContent = sourceInput.value.length + " 字符";
+        targetStats.textContent = targetOutput.value.length + " 字符";
+        const hasOutput = targetOutput.value.length > 0;
+        copyButton.disabled = !hasOutput;
+        downloadButton.disabled = !hasOutput;
+      }
+
+      function convert() {
+        const source = sourceInput.value.trim();
+        if (!source) {
+          targetOutput.value = "";
+          refreshStamp.textContent = "—";
+          updateStats();
+          setStatus("粘贴 Session JSON 到左侧输入框，将自动转换。");
+          return;
+        }
+
+        try {
+          const result = convertSessionToAuth(source, compactToggle.checked);
+          targetOutput.value = result.json;
+          refreshStamp.textContent = result.lastRefresh;
+          updateStats();
+          setStatus("✅ 转换完成。", "ok");
+        } catch (error) {
+          targetOutput.value = "";
+          refreshStamp.textContent = "—";
+          updateStats();
+          setStatus("❌ " + error.message, "error");
+        }
+      }
+
+      async function copyOutput() {
+        if (!targetOutput.value) return;
+        try {
+          await navigator.clipboard.writeText(targetOutput.value);
+          setStatus("📋 已复制到剪贴板。", "ok");
+        } catch {
+          targetOutput.focus();
+          targetOutput.select();
+          document.execCommand("copy");
+          setStatus("📋 已复制到剪贴板。", "ok");
+        }
+      }
+
+      function downloadOutput() {
+        if (!targetOutput.value) return;
+        const blob = new Blob([targetOutput.value], {
+          type: "application/json;charset=utf-8",
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "auth.json";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        setStatus("💾 已下载 auth.json。", "ok");
+      }
+
+      async function pasteFromClipboard() {
+        try {
+          sourceInput.value = await navigator.clipboard.readText();
+          updateStats();
+          convert();
+          setStatus("📥 已从剪贴板粘贴并自动转换。", "ok");
+        } catch {
+          setStatus("⚠️ 浏览器未允许读取剪贴板，请手动粘贴 (Ctrl+V)。", "error");
+        }
+      }
+
+      function clearAll() {
+        sourceInput.value = "";
+        targetOutput.value = "";
+        refreshStamp.textContent = "—";
+        updateStats();
+        setStatus("已清空，等待新的输入。");
+        sourceInput.focus();
+      }
+
+      async function loadFile(file) {
+        if (!file) return;
+        sourceInput.value = await file.text();
+        updateStats();
+        convert();
+        setStatus("📂 已加载文件并自动转换。", "ok");
+      }
+
+      // ── 事件绑定 ──────────────────
+
+      // 粘贴自动转换
+      sourceInput.addEventListener("paste", () => {
+        // 等待浏览器完成粘贴
+        setTimeout(() => {
+          updateStats();
+          convert();
+          setStatus("📥 检测到粘贴，已自动转换。", "ok");
+        }, 20);
+      });
+
+      // 手动转换按钮
+      convertButton.addEventListener("click", () => {
+        const source = sourceInput.value.trim();
+        if (source) {
+          convert();
+        } else {
+          setStatus("请先输入 Session JSON。");
+        }
+      });
+
+      // 压缩开关
+      compactToggle.addEventListener("change", () => {
+        if (targetOutput.value) {
+          convert();
+        }
+      });
+
+      // Ctrl+Enter 手动转换
+      sourceInput.addEventListener("keydown", (event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+          event.preventDefault();
+          convert();
+        }
+      });
+
+      // 其他按钮
+      copyButton.addEventListener("click", copyOutput);
+      downloadButton.addEventListener("click", downloadOutput);
+      clearButton.addEventListener("click", clearAll);
+      pasteButton.addEventListener("click", pasteFromClipboard);
+      openFileButton.addEventListener("click", () => fileInput.click());
+      fileInput.addEventListener("change", () =>
+        loadFile(fileInput.files[0]),
+      );
+
+      // 更新统计
+      sourceInput.addEventListener("input", updateStats);
+
+      // 初始状态
+      updateStats();
+    </script>
+  </body>
+</html>
